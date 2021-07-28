@@ -19,12 +19,15 @@ class ViewController: UITableViewController {
         super.viewDidLoad()
     }
 
+    func output(_ s: Any) -> Void {
+        print(s)
+    }
+
     @IBAction func exJust1() {
-        Observable.just("Hello World")
-            .subscribe(onNext: { str in
-                print(str)
-            })
+        Observable.from(["RxSwift", "In", "4", "Hours"])
+            .subscribe(onNext: output)
             .disposed(by: disposeBag)
+
     }
 
     @IBAction func exJust2() {
@@ -53,7 +56,7 @@ class ViewController: UITableViewController {
     }
 
     @IBAction func exMap2() {
-        Observable.from(["with", "곰튀김"])
+        Observable.from(["with", "곰튀김"]) // stream
             .map { $0.count }
             .subscribe(onNext: { str in
                 print(str)
@@ -72,13 +75,18 @@ class ViewController: UITableViewController {
 
     @IBAction func exMap3() {
         Observable.just("800x600")
-            .map { $0.replacingOccurrences(of: "x", with: "/") }
-            .map { "https://picsum.photos/\($0)/?random" }
-            .map { URL(string: $0) }
+            .map { $0.replacingOccurrences(of: "x", with: "/") } // "800/600"
+            .map { "https://picsum.photos/\($0)/?random" } // "https://picsum.photos/800/600/?random"
+            .map { URL(string: $0) } // URL?
             .filter { $0 != nil }
-            .map { $0! }
-            .map { try Data(contentsOf: $0) }
-            .map { UIImage(data: $0) }
+            .map { $0! } // URL!
+            .map { try Data(contentsOf: $0) } // Data
+            .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .default))
+            .map { UIImage(data: $0) } // UIImage?
+            .observeOn(MainScheduler.instance)
+            .do(onNext: { image in
+                print(image?.size)
+            })
             .subscribe(onNext: { image in
                 self.imageView.image = image
             })

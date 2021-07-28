@@ -12,10 +12,16 @@ import UIKit
 
 class ViewController: UIViewController {
     var disposeBag = DisposeBag()
+    let idInputText: BehaviorSubject<String> = BehaviorSubject(value: "")
+    let idValid: BehaviorSubject<Bool> = BehaviorSubject(value: false)
+
+    let pwInputText: BehaviorSubject<String> = BehaviorSubject(value: "")
+    let pwValid: BehaviorSubject<Bool> = BehaviorSubject(value: false)
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        bindUI()
+        bindInput()
+        bindOutput()
     }
 
     // MARK: - IBOutler
@@ -28,12 +34,48 @@ class ViewController: UIViewController {
 
     // MARK: - Bind UI
 
-    private func bindUI() {
-        // id input +--> check valid --> bullet
-        //          |
-        //          +--> button enable
-        //          |
-        // pw input +--> check valid --> bullet
+    func invert(_ bool: Bool) -> Bool { return !bool }
+
+    private func bindInput() {
+        // input: 아이디 입력, 비번 입력
+        idField.rx.text.orEmpty
+            .bind(to: idInputText)
+            .disposed(by: disposeBag)
+
+        idInputText
+            .map(checkEmailValid)
+            .bind(to: idValid)
+            .disposed(by: disposeBag)
+
+        pwField.rx.text.orEmpty
+            .bind(to: pwInputText)
+            .disposed(by: disposeBag)
+
+        pwInputText
+            .map(checkPasswordValid)
+            .bind(to: pwValid)
+            .disposed(by: disposeBag)
+    }
+
+    private func bindOutput(){
+        // output: 불릿, 로그인버튼 이네이블
+        idValid
+            .subscribe(onNext: { bool in
+                self.idValidView.isHidden = bool
+            })
+            .disposed(by: disposeBag)
+
+        pwValid
+            .subscribe(onNext: { bool in
+                self.pwValidView.isHidden = bool
+            })
+            .disposed(by: disposeBag)
+
+        Observable.combineLatest(idValid, pwValid, resultSelector: { $0 && $1 })
+            .subscribe(onNext: { bool in
+                self.loginButton.isEnabled = bool
+            })
+            .disposed(by: disposeBag)
     }
 
     // MARK: - Logic

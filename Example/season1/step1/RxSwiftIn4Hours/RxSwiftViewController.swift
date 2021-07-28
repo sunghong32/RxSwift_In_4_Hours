@@ -29,10 +29,12 @@ class RxSwiftViewController: UIViewController {
 
     // MARK: - IBAction
 
+    var disposeBag = DisposeBag()
+
     @IBAction func onLoadImage(_ sender: Any) {
         imageView.image = nil
 
-        _ = rxswiftLoadImage(from: LARGER_IMAGE_URL)
+        rxswiftLoadImage(from: LARGER_IMAGE_URL)
             .observeOn(MainScheduler.instance)
             .subscribe({ result in
                 switch result {
@@ -46,10 +48,12 @@ class RxSwiftViewController: UIViewController {
                     break
                 }
             })
+            .disposed(by: disposeBag)
     }
 
     @IBAction func onCancel(_ sender: Any) {
-        // TODO: cancel image loading
+        disposeBag = DisposeBag()
+
     }
 
     // MARK: - RxSwift

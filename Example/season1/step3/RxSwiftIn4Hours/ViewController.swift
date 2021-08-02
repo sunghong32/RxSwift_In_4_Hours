@@ -11,6 +11,8 @@ import RxSwift
 import UIKit
 
 class ViewController: UIViewController {
+
+    let viewModel = ViewModel()
     var disposeBag = DisposeBag()
     let idInputText: BehaviorSubject<String> = BehaviorSubject(value: "")
     let idValid: BehaviorSubject<Bool> = BehaviorSubject(value: false)
@@ -20,8 +22,7 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        bindInput()
-        bindOutput()
+        bindUI()
     }
 
     // MARK: - IBOutler
@@ -36,55 +37,28 @@ class ViewController: UIViewController {
 
     func invert(_ bool: Bool) -> Bool { return !bool }
 
-    private func bindInput() {
+    private func bindUI() {
         // input: 아이디 입력, 비번 입력
         idField.rx.text.orEmpty
-            .bind(to: idInputText)
-            .disposed(by: disposeBag)
-
-        idInputText
-            .map(checkEmailValid)
-            .bind(to: idValid)
+            .bind(to: viewModel.emailText)
             .disposed(by: disposeBag)
 
         pwField.rx.text.orEmpty
-            .bind(to: pwInputText)
+            .bind(to: viewModel.pwText)
             .disposed(by: disposeBag)
 
-        pwInputText
-            .map(checkPasswordValid)
-            .bind(to: pwValid)
-            .disposed(by: disposeBag)
-    }
-
-    private func bindOutput(){
-        // output: 불릿, 로그인버튼 이네이블
-        idValid
-            .subscribe(onNext: { bool in
-                self.idValidView.isHidden = bool
-            })
+        // output: 이메일, 비번 체크 결과
+        viewModel.isEmailValid
+            .bind(to: idValidView.rx.isHidden)
             .disposed(by: disposeBag)
 
-        pwValid
-            .subscribe(onNext: { bool in
-                self.pwValidView.isHidden = bool
-            })
+        viewModel.isPasswordValid
+            .bind(to: pwValidView.rx.isHidden)
             .disposed(by: disposeBag)
 
-        Observable.combineLatest(idValid, pwValid, resultSelector: { $0 && $1 })
-            .subscribe(onNext: { bool in
-                self.loginButton.isEnabled = bool
-            })
+        // output: 버튼의 enble 상태
+        Observable.combineLatest(viewModel.isEmailValid, viewModel.isPasswordValid) { $0 && $1 }
+            .bind(to: loginButton.rx.isEnabled)
             .disposed(by: disposeBag)
-    }
-
-    // MARK: - Logic
-
-    private func checkEmailValid(_ email: String) -> Bool {
-        return email.contains("@") && email.contains(".")
-    }
-
-    private func checkPasswordValid(_ password: String) -> Bool {
-        return password.count > 5
     }
 }

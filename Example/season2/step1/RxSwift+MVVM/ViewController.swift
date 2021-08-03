@@ -12,21 +12,23 @@ import UIKit
 
 let MEMBER_LIST_URL = "https://my.api.mockaroo.com/members_with_avatar.json?key=44ce18f0"
 
-class 나중에생기는데이터<T> {
-    private let task: (@escaping (T) -> Void) -> Void
-
-    init(task: @escaping (@escaping (T) -> Void) -> Void) {
-        self.task = task
-    }
-
-    func 나중에오면(_ f: @escaping (T) -> Void) {
-        task(f)
-    }
-}
+//class 나중에생기는데이터<T> {
+//    private let task: (@escaping (T) -> Void) -> Void
+//
+//    init(task: @escaping (@escaping (T) -> Void) -> Void) {
+//        self.task = task
+//    }
+//
+//    func 나중에오면(_ f: @escaping (T) -> Void) {
+//        task(f)
+//    }
+//}
 
 class ViewController: UIViewController {
     @IBOutlet var timerLabel: UILabel!
     @IBOutlet var editView: UITextView!
+
+    let disposeBag = DisposeBag()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,7 +54,7 @@ class ViewController: UIViewController {
     // 4. onCompleted  /  onError
     // 5. Disposed
 
-    func downloadJson(_ url: String) -> Observable<String?> {
+    func downloadJson(_ url: String) -> Observable<String> {
 
         // 1. 비동기로 생기는 데이터를 Observable로 감싸서 리턴하는 방법
         Observable.create() { emitter in
@@ -86,11 +88,15 @@ class ViewController: UIViewController {
         self.setVisibleWithAnimation(self.activityIndicator, true)
 
         // 2. Obsevable로 오는 데이터를 받아서 처리하는 방법
-        _ = downloadJson(MEMBER_LIST_URL)
+        let jsonObservable = downloadJson(MEMBER_LIST_URL)
+        let helloObservable = Observable.just("Hello World")
+
+        Observable.zip(jsonObservable, helloObservable) { $1 + "\n" + $0 }
             .observeOn(MainScheduler.instance) // sugar: operator
             .subscribe(onNext: { json in
                 self.editView.text = json
                 self.setVisibleWithAnimation(self.activityIndicator, false)
             })
+            .disposed(by: disposeBag)
     }
 }

@@ -75,21 +75,6 @@ class ViewController: UIViewController {
                 task.cancel()
             }
         }
-
-        //        return Observable.create { f in
-        //            DispatchQueue.global().async {
-        //                let url = URL(string: url)!
-        //                let data = try! Data(contentsOf: url)
-        //                let json = String(data: data, encoding: .utf8)
-        //
-        //                DispatchQueue.main.async {
-        //                    f.onNext(json)
-        //                    f.onCompleted()
-        //                }
-        //            }
-        //
-        //            return Disposables.create()
-        //        }
     }
 
     // MARK: SYNC
@@ -100,18 +85,12 @@ class ViewController: UIViewController {
         editView.text = ""
         self.setVisibleWithAnimation(self.activityIndicator, true)
 
-        _ = downloadJson(MEMBER_LIST_URL)
-
         // 2. Obsevable로 오는 데이터를 받아서 처리하는 방법
-            .subscribe { event in
-                switch event {
-                case .next:
-                    break
-                case .error:
-                    break
-                case .completed:
-                    break
-                }
-            }
+        _ = downloadJson(MEMBER_LIST_URL)
+            .observeOn(MainScheduler.instance) // sugar: operator
+            .subscribe(onNext: { json in
+                self.editView.text = json
+                self.setVisibleWithAnimation(self.activityIndicator, false)
+            })
     }
 }
